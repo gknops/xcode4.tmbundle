@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>beforeRunningCommand</key>
+	<string>saveModifiedFiles</string>
+	<key>command</key>
+	<string>#!/bin/sh
+
+aploPath=/tmp/aplo$$.aplo
+
+APLO_BUILD=1
+APLO_RUN=1
+
+if [ "X$APLO_DEFAULT_TO_LAST" != 'X' ]; then
+	lastRun=`cat "$TM_PROJECT_DIRECTORY/.aploLastBuild"`
+	APLO_WINDOW_NAME=${APLO_WINDOW_NAME:-"$lastRun"}
+fi
+
+APLO_WINDOW_NAME=${APLO_WINDOW_NAME:-$(basename "$TM_PROJECT_DIRECTORY")}
+
+scheme=${APLO_XCODE_SCHEME:-"$APLO_WINDOW_NAME"}
+buildAction=${APLO_XCODE_BUILDACTION:-build}
+
+if [ "X$APLO_DEFAULT_TO_LAST" != 'X' ]; then
+	echo $scheme &gt;"$TM_PROJECT_DIRECTORY/.aploLastBuild"
+fi
+
+APLO_CWD=${APLO_CWD:-"$TM_PROJECT_DIRECTORY"}
+APLO_XCODE_ARGS=${APLO_XCODE_ARGS:-"-scheme '$scheme' '$buildAction'"}
+APLO_PARSER_PATH=${APLO_PARSER_PATH:-"$TM_BUNDLE_SUPPORT/xcodebuildParser"}
+APLO_DELETE_FILE=$aploPath
+
+export APLO_BUILD APLO_RUN APLO_WINDOW_NAME APLO_CWD APLO_XCODE_ARGS APLO_PARSER_PATH APLO_DELETE_FILE
+
+env&gt;$aploPath
+echo $aploPath
+open $aploPath
+</string>
+	<key>input</key>
+	<string>none</string>
+	<key>inputFormat</key>
+	<string>text</string>
+	<key>keyEquivalent</key>
+	<string>@r</string>
+	<key>name</key>
+	<string>Build &amp; Run</string>
+	<key>outputCaret</key>
+	<string>afterOutput</string>
+	<key>outputFormat</key>
+	<string>text</string>
+	<key>outputLocation</key>
+	<string>toolTip</string>
+	<key>scope</key>
+	<string>source.objc</string>
+	<key>uuid</key>
+	<string>757C6045-135E-4766-B455-59E7C8626E4F</string>
+	<key>version</key>
+	<integer>2</integer>
+</dict>
+</plist>

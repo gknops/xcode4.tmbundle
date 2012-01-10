@@ -1,0 +1,776 @@
+#!/usr/bin/perl -w
+###############################################################################
+#	Copyright 2012 BITart Gerd Knops,  All rights reserved.
+#
+#	Project	: ApLo (BITart)
+#	File	: xcodebuildParser
+#	Author	: Gerd Knops gerti@BITart.com
+#
+###############################################################################
+#
+#	History:
+#	120107 Creation of file
+#
+###############################################################################
+#
+#	Description:
+#	«»
+#
+###############################################################################
+#
+# DISCLAIMER
+#
+# BITart and Gerd Knops make no warranties, representations or commitments
+# with regard to the contents of this software. BITart and Gerd Knops
+# specifically disclaim any and all warranties, whether express, implied or
+# statutory, including, but not limited to, any warranty of merchantability
+# or fitness for a particular purpose, and non-infringement. Under no
+# circumstances will BITart or Gerd Knops be liable for loss of data,
+# special, incidental or consequential damages out of the use of this
+# software, even if those damages were foreseeable, or BITart or Gerd Knops
+# was informed of their potential.
+#
+###############################################################################
+# Configuration
+###############################################################################
+	
+	use strict;
+    use feature "switch";
+	
+	$|=1;
+	
+	#
+	# Note: optionally keyword values are preceded by one or more option flags,
+	# separated from the value with a pipe ('|') symbol. The keywords are:
+	# 
+	# - any digit n: use the nth argument as path to display (default: 1).
+	# - Xn: the nth argument is the path of the executable.
+	# 
+	our %KeyWords=(
+		'Clean.Remove'				=> '2|Cleaning',
+		ProcessInfoPlistFile		=> 'Processing Info.plist',
+		ProcessPCH					=> '2|Precompiling header',
+		CompileC					=> '2|Compiling',
+		Ld							=> 'X1|Linking',
+		CopyStringsFile				=> 'Copy strings',
+		CpResource					=> 'Copy resource',
+		CompileXIB					=> 'Compiling XIB',
+		Touch						=> 'Touching',
+		ExternalBuildToolExecution	=> 'Running external tool',
+		PhaseScriptExecution		=> 'Running build phase script',
+	);
+	
+	our $ExecutablePath='';
+	our $FinalResult=0;
+	our $MainClass='xcodebuild';
+	
+	our $IDCounter='levelID00000';	
+	our $OIDCounter='oID00000';	
+	
+	our $ProjectRoot=$ENV{TM_PROJECT_DIRECTORY};
+	our %PathLookup;
+	
+###############################################################################
+# Main
+###############################################################################
+	
+	if(scalar(@ARGV)==1)
+	{
+		given($ARGV[0])
+		{
+			when ('-js') { printJavascript(); exit(0); }
+			when ('-css') { printCSS(); exit(0); }
+		}
+	}
+	
+	our $level=NestedLevel->new();
+	
+	if($ENV{APLO_BUILD})
+	{
+		open(IN,'-|',"xcodebuild $ENV{APLO_XCODE_ARGS}")
+			or die("Can't open 'xcodebuild $ENV{APLO_XCODE_ARGS}' for read: $!\n");
+		while(<IN>)
+		{
+			chomp();
+			next if(/^\s*$/);
+			if(/^\s+/)
+			{
+				$level->emitLine($_);
+			}
+			elsif(/^===\s*(.+)\s*===$/)
+			{
+				my $txt=$1;
+				my $hidden=($txt=~/^clean/i)?1:0;
+				
+				$level=$level->popTo(0);
+				$level=$level->newChild($hidden,'',$txt);
+			}
+			elsif(/^\*\*\s*(.+)\s*\*\*/)
+			{
+				my $txt=$1;
+				
+				$level=$level->popTo(1);
+				$level=$level->addResult($txt);
+			}
+			elsif(/^\S+:\s*(warning|error):/)
+			{
+				$level=$level->popTo(1);
+				$level=$level->addWarningOrErrorLevel(lc($1),$_);
+			}
+			elsif(s/^(\S+)\s*//)
+			{
+				if(exists($KeyWords{$1}))
+				{
+					$level=$level->popTo(1);
+					$level=$level->newSubSection($1,$_);
+				}
+				else
+				{
+					$level->emitLine("$1 $_");
+				}
+			}		
+		}
+		close(IN);
+		
+		$level=$level->popTo(0);
+		
+		storeExecutablePath();
+		
+		if($FinalResult)
+		{
+			playSound($ENV{TM_ERROR_SOUND});
+			exit($FinalResult);
+		}
+		else
+		{
+			playSound($ENV{TM_SUCCESS_SOUND});
+		}
+	}
+	
+	exit(0) unless($ENV{APLO_RUN});
+	
+	unless(findExecutablePath())
+	{
+		$level=$level->addResult('Run failed: Executable path unknown');
+		
+		$level=$level->popTo(0);
+		exit(1);
+	}
+	
+	$level=$level->newChild(0,'',"Running $ExecutablePath");
+	
+	open(IN,"'$ExecutablePath' 2>&1 |") or die("Can't open '$ExecutablePath |' for read: $!\n");
+	while(<IN>)
+	{
+		#define	DLog(format,...) NSLog(@"%s:%d: "format,__FILE__,__LINE__,##__VA_ARGS__);
+		#define	ERRLog(format,...) NSLog(@"%s:%d: ERROR: "format,__FILE__,__LINE__,##__VA_ARGS__);
+		#define	ASSERTLog(format,...) NSLog(@"%s:%d: ASSERTION: "format,__FILE__,__LINE__,##__VA_ARGS__);
+		
+		# 2012-01-09 17:21:31.987 ApLo[47360:707] /Users/gerti/BITart/OSX/ApLo/ApLo/ApLoAppDelegate.m:19: init ()
+		
+		# remove NSLog prefix stuff
+		s/^\d+\-\d+\-\d+\s+\d+:\d+:\d+\.\d+\s+\S+\s+//;
+		
+		$level->appendLineWithLink($_,'appOutput');
+		
+		
+		# my $html=$line;
+		# 	
+		# if($line=~s/^([^:]+):(\d+):((\d+)\:)?\s*//)
+		# {
+		# 	my $path=$1;
+		# 	my $lineNo=$2;
+		# 	my $column=$4 // undef;
+		# 
+		# 	my $file=$path;
+		# 	$file=~s/.*\///;
+		# 
+		# 	$path=$self->percentEscape($path);
+		# 
+		# 	my $col='';
+		# 
+		# 	if(defined($column))
+		# 	{
+		# 		$col=qq{&column=$column};
+		# 	}
+		# 
+		# 	$html=qq{<a href="txmt://open/?url=file://$path&line=$lineNo$col">$file</a>: $line};
+		# }
+		# 	
+		# $self->emitLine($html);
+		# 
+		
+		
+		# if(/^\S+:\s*(warning|error):/)
+		# {
+		# 	$level=$level->popTo(1);
+		# 	$level=$level->addWarningOrErrorLevel(lc($1),$_);
+		# }
+		# else
+		# {
+		# 	$level->emitLine($_);
+		# }
+	}
+	close(IN);
+	
+	$level=$level->addResult('Application terminated');
+	$level=$level->popTo(0);
+	
+	exit(0);
+
+###############################################################################
+# Subroutines
+###############################################################################
+sub storeExecutablePath {
+	
+	return unless($ExecutablePath);
+	
+	open(OUT,">.aploExecutablePathFor$ENV{APLO_WINDOW_NAME}") or die("Can't open '.aploExecutablePathFor$ENV{APLO_WINDOW_NAME}' for write: $!\n");
+	print OUT $ExecutablePath;
+	close(OUT);
+}
+sub findExecutablePath {
+	
+	return 1 if($ExecutablePath);
+	
+	open(IN,".aploExecutablePathFor$ENV{APLO_WINDOW_NAME}") or return 0;
+	$ExecutablePath=<IN>;
+	close(IN);
+	
+	return 1 if($ExecutablePath);
+	
+	return 0;
+}
+sub playSound {
+	
+	my $sf=shift;
+	
+	return unless($sf);
+	
+	unless(index($sf,'/')==0)
+	{
+		$sf="/System/Library/Sounds/$sf.aiff";
+	}
+	
+	if(-r $sf)
+	{
+		system("/usr/bin/afplay '$sf' 2>/dev/null");
+	}
+}
+sub lookupAbsolutePath {
+	
+	my $file=shift;
+	
+	createPathLookup($ProjectRoot) unless(%PathLookup);
+	
+	return $PathLookup{$file} if(exists($PathLookup{$file}));
+	
+	$file;
+}
+sub createPathLookup {
+	
+	my $dir=shift;
+	
+	opendir(DIR,"$dir") or die("Can't read directory '$dir': $!\n");
+	my @files=grep { -f "$dir/$_" } readdir(DIR);
+	closedir(DIR);
+	
+	foreach my $file (@files)
+	{
+		$PathLookup{$file}=percentEscape("$dir/$file");
+	}
+	
+	opendir(DIR,"$dir") or die("Can't read directory '$dir': $!\n");
+	my @dirs=grep { !/^\./ && -d "$dir/$_" } readdir(DIR);
+	closedir(DIR);
+	
+	foreach my $sdir (@dirs)
+	{
+		createPathLookup("$dir/$sdir");
+	}
+}
+sub percentEscape {
+	
+	my $s=shift;
+	
+	# $s=~s/([^a-zA-Z0-9_\-.\/])/uc sprintf("%%%02x",ord($1))/eg;
+	$s=~s/(\s|[]\!\*\'\(\)\;\:\@\&\=\+\$\,\?\#\[\]])/uc sprintf("%%%02x",ord($1))/eg;
+	
+	$s;
+}
+
+###############################################################################
+# Javascript & CSS
+###############################################################################
+sub printJavascript {
+	
+	print <<'JAVASCRIPT';
+	function toggleLevel(button,id) {
+	
+		var html=toggleVisibilityOfElementsNamed(id);
+	
+		if(html) button.innerHTML=html;
+	}
+	function toggleVisibilityOfElementsNamed(elementName) {
+	
+	    var elements=document.getElementsByName(elementName);
+	
+		if(elements.length<1) return null;
+	
+		var retVal='▶';
+		var dispVal='none';
+	
+		if(elements[0].style.display=='none')
+		{
+			dispVal='block';
+			retVal='▼';
+		}
+	
+		for(var i=elements.length-1;i>=0;i--)
+		{
+			elements[i].originalFoldValue=dispVal;
+			elements[i].style.display=dispVal;
+		}
+	
+		var foldLevel=indentLevelOfElement(elements[0]);
+	
+		if(dispVal=='none')
+		{
+			foldElementsOfEqualOrHigherLevel(elements[0],foldLevel);
+		}
+		else
+		{
+			restoreElementsOfEqualOrHigherLevel(elements[0],foldLevel);
+		}
+	
+		return retVal;
+	}
+	function indentLevelOfElement(element) {
+	
+		var ls=element.className;
+	
+		if(!ls) return -1;
+	
+		var ls=ls.match(/indent\d+/);
+	
+		if(!ls) return -1;
+	
+		ls=ls[0].match(/\d+/);
+	
+		return parseInt(ls[0]);
+	}
+	function foldElementsOfEqualOrHigherLevel(element,level)
+	{
+		if(!element) return;
+	
+		var l=indentLevelOfElement(element);
+	
+		if(l>=0)
+		{
+			if(l<level) return;
+			var ov=element.style.display;
+			if(!ov) ov='block';
+			element.originalFoldValue=ov;
+			element.style.display='none';
+		}
+	
+		foldElementsOfEqualOrHigherLevel(element.nextSibling,level);
+	}
+	function restoreElementsOfEqualOrHigherLevel(element,level)
+	{
+		if(!element) return;
+	
+		var l=indentLevelOfElement(element);
+	
+		if(l>=0)
+		{
+			if(l<level) return;
+		
+			var ov=element.originalFoldValue;
+		
+			if(ov)
+			{
+				element.style.display=ov;
+			}
+		}
+	
+		restoreElementsOfEqualOrHigherLevel(element.nextSibling,level);
+	}
+JAVASCRIPT
+}
+sub printCSS {
+	
+	print <<'CSS';
+	.xcodebuild {
+		font: 12px "Arial";
+	}
+	.compilerOutput {
+		font-size: 10px;
+	}
+	.monospaced {
+		font: 12px "Monaco", "Courier New", monospace;
+		white-space: pre-wrap;
+	}
+	.indent1 {
+		margin-left: 12px;
+	}
+	.indent2 {
+		margin-left: 24px;
+	}
+	.indent3 {
+		margin-left: 36px;
+	}
+	.indent3 {
+		margin-left: 48px;
+	}
+			
+	.levelToggle {
+		border: none;
+		padding: 0px;
+		margin-right: 4px;
+		background: none;
+		width: 14px;
+	}
+	.isHidden {
+		display: none;
+	}
+			
+	.levelPrefix {
+	}
+	.levelMsg {
+		font-weight: bold;
+	}
+			
+	.okSection, .okHeader {
+		color: white;
+		font-weight: bold;
+		background: Green ;
+	}
+	.okLine {
+		background: PaleGreen;
+	}
+	.errorSection, .errorLevelHeader, .errorHeader {
+		color: white;
+		font-weight: bold;
+		background: DarkRed ;
+	}
+	.errorLevel, .errorLine {
+		background: MistyRose;
+	}
+	.warningLevelHeader {
+		color: white;
+		font-weight: bold;
+		background: DarkKhaki ;
+	}
+	.warningLevel {
+		background: LightGoldenRodYellow;
+	}
+	.appOutput {
+		font: 12px "Monaco", "Courier New", monospace;
+		white-space: pre-wrap;
+	}
+	.appOutputWARNING {
+		color: GoldenRod;
+	}
+	.appOutputERROR {
+		color: FireBrick;
+	}
+	.appOutputASSERTION {
+		color: white;
+		font-weight: bold;
+		background: FireBrick ;
+	}
+	
+CSS
+};
+
+###############################################################################
+package NestedLevel;
+###############################################################################
+sub new {
+	
+	my $class=shift;
+	
+	my $self=bless({},$class);
+	
+	$self->{cssClasses}=[];
+	$self->{level}=0;
+	
+	$self->{id}=$IDCounter++;
+	
+	$self;
+}
+sub newChild {
+	
+	my $self=shift;
+	my $hidden=shift;
+	my $prefix=shift // '';
+	my $msg=shift // '';
+	my @extraClasses=@_;
+	
+	my $class=ref($self) || $self;
+	
+	my $child=$class->new();
+	
+	$child->{parent}=$self;
+	$child->{level}=$self->{level}+1;
+	$child->{hidden}=$hidden;
+	
+	my $line=$child->toggleButton($hidden);
+	
+	if($prefix ne '')
+	{
+		$line.=qq{<span class="levelPrefix">$prefix</span> };
+	}
+	
+	$line.=qq{<span class="levelMsg">$msg</span>};
+	
+	$self->emitLine($line,@extraClasses);
+	
+	$child;
+}
+sub addClasses {
+	
+	my $self=shift;
+	
+	push(@{$self->{cssClasses}},@_);
+}
+sub emitLine {
+	
+	my $self=shift;
+	my $line=shift;
+	my @extraClasses=@_;
+	
+	my $txt=$self->divStartText(@extraClasses).$line.$self->divEndText();
+	
+	print $txt;
+}
+sub divStartText {
+	
+	my $self=shift;
+	my @extraClasses=@_;
+	
+	my @classes=();
+	push(@classes,$::MainClass) if($::MainClass);
+	push(@classes,"indent$self->{level}");
+	push(@classes,@{$self->{cssClasses}});
+	push(@classes,@extraClasses);
+	
+	my $classes=join(' ',@classes);
+	
+	my $oid='';
+	
+	if($self->{level}==0)
+	{
+		my $noid=$OIDCounter++;
+		$oid=qq{ id="$noid"};
+		
+		$self->{lastOID}=$noid;
+	}
+	
+	qq{<div class="$classes"$oid name="$self->{id}">};
+}
+sub divEndText {
+	
+	qq{</div>\n};
+}
+sub popTo {
+	
+	my $o=shift;
+	my $l=shift;
+	
+	while($o->{level}>$l)
+	{
+		if($o->{hidden})
+		{
+			print qq{<script type="text/javascript">toggleVisibilityOfElementsNamed('$o->{id}');</script>\n};
+		}
+		$o=$o->{parent};
+	}
+	
+	$o;
+}
+sub toggleButton {
+	
+	my $self=shift;
+	my $hidden=shift;
+	
+	my $id=$self->{id};
+	my $buttonTxt=($hidden)?'▶':'▼';
+	
+	my $txt=qq{<button type="button" class="levelToggle" onclick="toggleLevel(this,'$id')">$buttonTxt</button>};
+	
+	# if($hidden)
+	# {
+	# 	$txt.=qq{<script type="text/javascript">toggleLevel(null,'$id');</script>};
+	# }
+	
+	$txt;
+}
+sub addResult {
+	
+	my $self=shift;
+	my $txt=shift;
+	
+	my $success=($txt=~/failed/i)?'error':'ok';
+	
+	$FinalResult=($txt=~/failed/i)?1:0;
+	
+	my $child=$self->newChild(1,'',$txt,"${success}Header");
+	
+	$child->addClasses("${success}Line");
+	
+	if(exists($self->{parent}->{lastOID}))
+	{
+		my $oid=$self->{parent}->{lastOID};
+		
+		print qq{<script type="text/javascript">var el=document.getElementById('$oid');el.className+=" ${success}Section";</script>\n};
+	}
+	
+	$child;
+}
+sub addWarningOrErrorLevel {
+	
+	my $self=shift;
+	my $type=shift;
+	my $line=shift;
+	
+	my $child=$self->newChild(0,'',$type,"${type}LevelHeader");
+	
+	$child->addClasses("${type}Level");
+	$child->addClasses('monospaced');
+	$child->appendLineWithLink($line);
+	
+	$child;
+}
+sub appendLineWithLink {
+	
+	my $self=shift;
+	my $line=shift;
+	my @extraClasses=@_;
+	
+	my $html=$line;
+	
+	if($line=~s/^([^:]+):(\d+):((\d+)\:)?\s*//)
+	{
+		my $path=$1;
+		my $lineNo=$2;
+		my $column=$4 // undef;
+		
+		my $file=$path;
+		$file=~s/.*\///;
+		
+		if(substr($path,0,1) ne '/')
+		{
+			$path=&::lookupAbsolutePath($path);
+		}
+		else
+		{
+			$path=&::percentEscape($path);
+		}
+		
+		if(substr($path,0,1) eq '/')
+		{
+			$file.=":$lineNo";
+			
+			my $col='';
+			
+			if(defined($column))
+			{
+				$col=qq{&column=$column};
+				$file.="$column:";
+			}
+			
+			push(@extraClasses,"appOutput$1") if($line=~/^(WARNING|ERROR|ASSERTION)/);
+			
+			$html=qq{<a href="txmt://open/?url=file://$path&line=$lineNo$col">$file</a>: $line};
+		}
+	}
+	
+	$self->emitLine($html,@extraClasses);
+	
+	$self;
+}
+sub newSubSection {
+	
+	my $self=shift;
+	my $keyWord=shift;
+	my $text=shift;
+	
+	my $prefix=$keyWord;
+	my $pathArgNo=1;
+	my $execArgNo=0;
+	my $pathToDisplay='';
+	
+	if(exists($KeyWords{$keyWord}))
+	{
+		my $kw=$KeyWords{$keyWord};
+		if($kw=~s/(.+)\|//)
+		{
+			my $opts=$1;
+			
+			if($opts=~s/X(\d+)//)
+			{
+				$execArgNo=$1;
+			}
+			if($opts=~s/(\d+)//)
+			{
+				$pathArgNo=$1;
+			}
+			
+			if($opts ne '')
+			{
+				warn("Keyword $kw has unrecognized option '$opts'\n");
+			}
+		}
+		$prefix=$kw;
+	}
+	
+	my $ex=$self->getPathFromArgs($execArgNo,$text);
+	
+	$ExecutablePath=$ex if($ex ne '');
+	
+	$pathToDisplay=$self->getPathFromArgs($pathArgNo,$text);
+	$pathToDisplay=~s/.*\///;
+	
+	my $child=$self->newChild(1,$prefix,$pathToDisplay);
+	
+	$child->addClasses('compilerOutput');
+	
+	$child;
+}
+sub getPathFromArgs {
+	
+	my $self=shift;
+	my $num=shift;
+	my $s=shift;
+	
+	# print STDERR "$num: $s\n";
+	
+	return '' if($num<1);
+	
+	my @a=split(/\s/,$s);
+	
+	my $idx=0;
+	my @b=();
+	while($idx<scalar(@a))
+	{
+		my $a=$a[$idx++];
+		
+		push(@b,$a);
+		
+		if(index($a,'"')==0)
+		{
+			while($a!~/\"$/)
+			{
+				$a=$a[$idx++];
+				$b[-1].=$a;
+			}
+		}
+	}
+	
+	$b[$num-1] //'';
+}
+
+1;
+############################################################################EOF
