@@ -37,6 +37,8 @@
 	use strict;
     use feature "switch";
 	
+	our $WriteBuildLog=0;
+	
 	$|=1;
 	
 	#
@@ -87,25 +89,23 @@
 	
 	if($ENV{APLO_BUILD})
 	{
-		open(BUILDLOG,">/tmp/buildlog.txt") or die("Can't open '/tmp/buildlog.txt' for write: $!\n");
-		
-		
+		if($WriteBuildLog)
+		{
+			open(BUILDLOG,">/tmp/buildlog.txt") or die("Can't open '/tmp/buildlog.txt' for write: $!\n");
+		}
 		
 		open(IN,"xcodebuild $ENV{APLO_XCODE_ARGS} 2>&1 |")
 			or die("Can't open 'xcodebuild $ENV{APLO_XCODE_ARGS}' for read: $!\n");
 		while(<IN>)
 		{
-			print BUILDLOG $_;
+			print BUILDLOG $_ if($WriteBuildLog);
 			chomp();
-			# next if(/^\s*$/);
-			# if(/^\s+/)
-			# {
-			# 	$level->emitLine($_);
-			# }
-			# els
-			# warn("got line '$_'<br />\n"); 
 			
-			if(/^===\s*(.+)\s*===$/)
+			if(/^\s+/)
+			{
+				$level->emitLine($_);
+			}
+			elsif(/^===\s*(.+)\s*===$/)
 			{
 				my $txt=$1;
 				my $hidden=($txt=~/^clean/i)?1:0;
@@ -153,7 +153,7 @@
 			}	
 		}
 		close(IN);
-		close(BUILDLOG);
+		close(BUILDLOG) if($WriteBuildLog);
 		
 		$level=$level->popTo(0);
 		
@@ -235,6 +235,10 @@ sub playSound {
 	if(-r $sf)
 	{
 		system("/usr/bin/afplay '$sf' 2>/dev/null");
+	}
+	else
+	{
+		warn("playSound: '$sf' not found!<br />\n");
 	}
 }
 sub lookupAbsolutePath {
