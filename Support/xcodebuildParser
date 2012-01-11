@@ -87,7 +87,7 @@
 	
 	if($ENV{APLO_BUILD})
 	{
-		open(IN,'-|',"xcodebuild $ENV{APLO_XCODE_ARGS}")
+		open(IN,"xcodebuild $ENV{APLO_XCODE_ARGS} 2>&1 |")
 			or die("Can't open 'xcodebuild $ENV{APLO_XCODE_ARGS}' for read: $!\n");
 		while(<IN>)
 		{
@@ -105,12 +105,18 @@
 				$level=$level->popTo(0);
 				$level=$level->newChild($hidden,'',$txt);
 			}
-			elsif(/^\*\*\s*(.+)\s*\*\*/)
+			elsif(s/^\*\*\s*(.+)\s*\*\*\s*//)
 			{
 				my $txt=$1;
+				my $extraText=$_;
 				
 				$level=$level->popTo(1);
 				$level=$level->addResult($txt);
+				
+				if($extraText && $extraText ne '')
+				{
+					$level->emitLine($extraText,'errorLevel');
+				}
 			}
 			elsif(/^\S+:\s*(warning|error):/)
 			{
@@ -162,54 +168,11 @@
 	open(IN,"'$ExecutablePath' 2>&1 |") or die("Can't open '$ExecutablePath |' for read: $!\n");
 	while(<IN>)
 	{
-		#define	DLog(format,...) NSLog(@"%s:%d: "format,__FILE__,__LINE__,##__VA_ARGS__);
-		#define	ERRLog(format,...) NSLog(@"%s:%d: ERROR: "format,__FILE__,__LINE__,##__VA_ARGS__);
-		#define	ASSERTLog(format,...) NSLog(@"%s:%d: ASSERTION: "format,__FILE__,__LINE__,##__VA_ARGS__);
-		
 		# 2012-01-09 17:21:31.987 ApLo[47360:707] /Users/gerti/BITart/OSX/ApLo/ApLo/ApLoAppDelegate.m:19: init ()
-		
 		# remove NSLog prefix stuff
 		s/^\d+\-\d+\-\d+\s+\d+:\d+:\d+\.\d+\s+\S+\s+//;
 		
 		$level->appendLineWithLink($_,'appOutput');
-		
-		
-		# my $html=$line;
-		# 	
-		# if($line=~s/^([^:]+):(\d+):((\d+)\:)?\s*//)
-		# {
-		# 	my $path=$1;
-		# 	my $lineNo=$2;
-		# 	my $column=$4 // undef;
-		# 
-		# 	my $file=$path;
-		# 	$file=~s/.*\///;
-		# 
-		# 	$path=$self->percentEscape($path);
-		# 
-		# 	my $col='';
-		# 
-		# 	if(defined($column))
-		# 	{
-		# 		$col=qq{&column=$column};
-		# 	}
-		# 
-		# 	$html=qq{<a href="txmt://open/?url=file://$path&line=$lineNo$col">$file</a>: $line};
-		# }
-		# 	
-		# $self->emitLine($html);
-		# 
-		
-		
-		# if(/^\S+:\s*(warning|error):/)
-		# {
-		# 	$level=$level->popTo(1);
-		# 	$level=$level->addWarningOrErrorLevel(lc($1),$_);
-		# }
-		# else
-		# {
-		# 	$level->emitLine($_);
-		# }
 	}
 	close(IN);
 	
@@ -678,7 +641,7 @@ sub appendLineWithLink {
 			if(defined($column))
 			{
 				$col=qq{&column=$column};
-				$file.="$column:";
+				$file.=":$column";
 			}
 			
 			push(@extraClasses,"appOutput$1") if($line=~/^(WARNING|ERROR|ASSERTION)/);
