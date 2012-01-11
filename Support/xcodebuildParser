@@ -87,17 +87,25 @@
 	
 	if($ENV{APLO_BUILD})
 	{
+		open(BUILDLOG,">/tmp/buildlog.txt") or die("Can't open '/tmp/buildlog.txt' for write: $!\n");
+		
+		
+		
 		open(IN,"xcodebuild $ENV{APLO_XCODE_ARGS} 2>&1 |")
 			or die("Can't open 'xcodebuild $ENV{APLO_XCODE_ARGS}' for read: $!\n");
 		while(<IN>)
 		{
+			print BUILDLOG $_;
 			chomp();
-			next if(/^\s*$/);
-			if(/^\s+/)
-			{
-				$level->emitLine($_);
-			}
-			elsif(/^===\s*(.+)\s*===$/)
+			# next if(/^\s*$/);
+			# if(/^\s+/)
+			# {
+			# 	$level->emitLine($_);
+			# }
+			# els
+			# warn("got line '$_'<br />\n"); 
+			
+			if(/^===\s*(.+)\s*===$/)
 			{
 				my $txt=$1;
 				my $hidden=($txt=~/^clean/i)?1:0;
@@ -127,16 +135,25 @@
 			{
 				if(exists($KeyWords{$1}))
 				{
+					# warn("Found keyword '$1'");
+					
+					my $keyword=$1;
+					my $txt=$_;
 					$level=$level->popTo(1);
-					$level=$level->newSubSection($1,$_);
+					$level=$level->newSubSection($keyword,$txt);
 				}
 				else
 				{
 					$level->emitLine("$1 $_");
 				}
-			}		
+			}
+			else
+			{
+				$level->emitLine("$_");
+			}	
 		}
 		close(IN);
+		close(BUILDLOG);
 		
 		$level=$level->popTo(0);
 		
@@ -268,8 +285,9 @@ sub percentEscape {
 sub printJavascript {
 	
 	print <<'JAVASCRIPT';
-	function toggleLevel(button,id) {
+	function toggleLevel(id) {
 	
+		var button=document.getElementById(id);
 		var html=toggleVisibilityOfElementsNamed(id);
 	
 		if(html) button.innerHTML=html;
@@ -278,7 +296,7 @@ sub printJavascript {
 	
 	    var elements=document.getElementsByName(elementName);
 	
-		if(elements.length<1) return null;
+		if(elements.length<1) return ' ';
 	
 		var retVal='▶';
 		var dispVal='none';
@@ -504,6 +522,9 @@ sub emitLine {
 	my $line=shift;
 	my @extraClasses=@_;
 	
+	# warn("emitLine '$line'(%@)<br />\n"); 
+	
+	
 	my $txt=$self->divStartText(@extraClasses).$line.$self->divEndText();
 	
 	print $txt;
@@ -546,7 +567,7 @@ sub popTo {
 	{
 		if($o->{hidden})
 		{
-			print qq{<script type="text/javascript">toggleVisibilityOfElementsNamed('$o->{id}');</script>\n};
+			print qq{<script type="text/javascript">toggleLevel('$o->{id}');</script>\n};
 		}
 		$o=$o->{parent};
 	}
@@ -559,14 +580,8 @@ sub toggleButton {
 	my $hidden=shift;
 	
 	my $id=$self->{id};
-	my $buttonTxt=($hidden)?'▶':'▼';
 	
-	my $txt=qq{<button type="button" class="levelToggle" onclick="toggleLevel(this,'$id')">$buttonTxt</button>};
-	
-	# if($hidden)
-	# {
-	# 	$txt.=qq{<script type="text/javascript">toggleLevel(null,'$id');</script>};
-	# }
+	my $txt=qq{<button type="button" class="levelToggle" id="$id" onclick="toggleLevel('$id')">▼</button>};
 	
 	$txt;
 }
