@@ -598,6 +598,8 @@ sub addResult {
 	
 	$FinalResult=($txt=~/failed/i)?1:0;
 	
+	$self->{hidden}=1 if($FinalResult==0);
+	
 	my $child=$self->newChild(1,'',$txt,"${success}Header");
 	
 	$child->addClasses("${success}Line");
