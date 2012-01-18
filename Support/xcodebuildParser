@@ -101,6 +101,10 @@
 			print BUILDLOG $_ if($WriteBuildLog);
 			chomp();
 			
+			s/\&/&amp;/g;
+			s/\</&lt;/g;
+			s/\>/&gt;/g;
+			
 			if(/^\s+/)
 			{
 				$level->emitLine($_);
@@ -188,6 +192,10 @@
 		# 2012-01-09 17:21:31.987 ApLo[47360:707] /Users/gerti/BITart/OSX/ApLo/ApLo/ApLoAppDelegate.m:19: init ()
 		# remove NSLog prefix stuff
 		s/^\d+\-\d+\-\d+\s+\d+:\d+:\d+\.\d+\s+\S+\s+//;
+		
+		s/\&/&amp;/g;
+		s/\</&lt;/g;
+		s/\>/&gt;/g;
 		
 		$level->appendLineWithLink($_,'appOutput');
 	}
@@ -464,8 +472,7 @@ sub printCSS {
 		color: white;
 		font-weight: bold;
 		background: FireBrick ;
-	}
-	
+	}	
 CSS
 };
 
