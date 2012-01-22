@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>beforeRunningCommand</key>
-	<string>saveModifiedFiles</string>
+	<string>nop</string>
 	<key>command</key>
 	<string>#!/bin/sh
 
-APLO_BUILD=1
+APLO_BUILD=0
 APLO_RUN=1
 
 if [ "X$APLO_DEFAULT_TO_LAST" != 'X' ]; then
@@ -42,9 +42,9 @@ open $aploPath
 	<key>inputFormat</key>
 	<string>text</string>
 	<key>keyEquivalent</key>
-	<string>@r</string>
+	<string>@X</string>
 	<key>name</key>
-	<string>Build &amp; Run</string>
+	<string>Run</string>
 	<key>outputCaret</key>
 	<string>afterOutput</string>
 	<key>outputFormat</key>
@@ -54,7 +54,7 @@ open $aploPath
 	<key>scope</key>
 	<string>source.objc</string>
 	<key>uuid</key>
-	<string>757C6045-135E-4766-B455-59E7C8626E4F</string>
+	<string>C166FAE1-DC42-4086-8BA9-0302D60ECD9E</string>
 	<key>version</key>
 	<integer>2</integer>
 </dict>

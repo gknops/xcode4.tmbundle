@@ -1,0 +1,25 @@
+# Introduction
+
+`Xcode4.tmbundle` provides simple build and run support for Xcode4 projects. It requires [`ApLo.tmbundle`](https://github.com/gknops/aplo.tmbundle).
+
+# Use
+
+While in an Objective-C source, use `⌘r` to build and run the current project, or `⇧⌘X` to access other commands (`Build`, `Run`, `Help`).
+
+**NOTE**: The bundle does not parse the `.xcodeproj` file (which is quite complex and a bit of a moving target). So in determines the path to the executable by parsing the output of the build command, and stores the path to the executable in a file named `.aploExecutablePathFor<TARGET>` in the project root. So the run command will fail until the project was compiled at least once before using the bundle commands, and at least one file must have had changes.
+
+# Multiple build targets
+
+If your project has multiple build targets, you can use `.tm_project` files in various directories to control which target will be build. Just set the `APLO_WINDOW_NAME` variable to the name of the desired target.
+
+If you have source shared between multiple targets, use the `.tm_project` file in the project root to set the `APLO_DEFAULT_TO_LAST` variable to `yes`. This will cause the bundle to memorize the last built target in a file named `.aploLastBuild` in the project root directory. 
+
+# Other .tm_project variables
+
+## APLO\_WINDOW\_NAME
+
+Sets the window name for ApLo. It not set it will default to the last path component of the `TM_PROJECT_DIRECTORY` environment variable.
+
+## APLO\_XCODE\_SCHEME
+
+Set the Xcode scheme to be used for building. Will default to `APLO_WINDOW_NAME`.

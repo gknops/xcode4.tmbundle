@@ -8,7 +8,7 @@
 	<string>#!/bin/sh
 
 APLO_BUILD=1
-APLO_RUN=1
+APLO_RUN=0
 
 if [ "X$APLO_DEFAULT_TO_LAST" != 'X' ]; then
 	lastRun=`cat "$TM_PROJECT_DIRECTORY/.aploLastBuild"`
@@ -18,7 +18,7 @@ fi
 APLO_WINDOW_NAME=${APLO_WINDOW_NAME:-$(basename "$TM_PROJECT_DIRECTORY")}
 
 scheme=${APLO_XCODE_SCHEME:-"$APLO_WINDOW_NAME"}
-buildAction=${APLO_XCODE_BUILDACTION:-build}
+buildAction='clean'
 
 if [ "X$APLO_DEFAULT_TO_LAST" != 'X' ]; then
 	echo $scheme &gt;"$TM_PROJECT_DIRECTORY/.aploLastBuild"
@@ -42,9 +42,9 @@ open $aploPath
 	<key>inputFormat</key>
 	<string>text</string>
 	<key>keyEquivalent</key>
-	<string>@r</string>
+	<string>@X</string>
 	<key>name</key>
-	<string>Build &amp; Run</string>
+	<string>Clean</string>
 	<key>outputCaret</key>
 	<string>afterOutput</string>
 	<key>outputFormat</key>
@@ -54,8 +54,8 @@ open $aploPath
 	<key>scope</key>
 	<string>source.objc</string>
 	<key>uuid</key>
-	<string>757C6045-135E-4766-B455-59E7C8626E4F</string>
+	<string>663B698A-AD1F-463C-933E-C5CA14802AE1</string>
 	<key>version</key>
-	<integer>2</integer>
+	<string>2</string>
 </dict>
 </plist>

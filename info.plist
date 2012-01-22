@@ -7,10 +7,20 @@
 	<key>contactName</key>
 	<string>Gerd Knops</string>
 	<key>description</key>
-	<string>New shiny bundle for X.</string>
+	<string>Xcode4 build support. This bundle requires the ApLo bundle.
+</string>
 	<key>name</key>
 	<string>Xcode4</string>
 	<key>uuid</key>
 	<string>1F87531A-C7FC-474C-9242-53C5EEE229A8</string>
+	<key>require</key>
+	<array>
+		<dict>
+			<key>name</key>
+			<string>ApLo</string>
+			<key>uuid</key>
+			<string>3A75A057-1008-436C-AC8A-23D2FDD3B36A</string>
+		</dict>
+	</array>
 </dict>
 </plist>
