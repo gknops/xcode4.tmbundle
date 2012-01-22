@@ -8,6 +8,53 @@ While in an Objective-C source, use `⌘r` to build and run the current project,
 
 **NOTE**: The bundle does not parse the `.xcodeproj` file (which is quite complex and a bit of a moving target). So in determines the path to the executable by parsing the output of the build command, and stores the path to the executable in a file named `.aploExecutablePathFor<TARGET>` in the project root. So the run command will fail until the project was compiled at least once before using the bundle commands, and at least one file must have had changes.
 
+# Clickable log output
+
+The parser parsing the application output will look for certain patterns and convert them into clickable links that get you right to the source file. This is a very useful debug tool. It can also highlight warning and error output.
+
+In the simplest case you could just include this:
+
+	#define	DLog(format,...) NSLog(@"%s:%d: "format,__FILE__,__LINE__,##__VA_ARGS__);
+
+and start using `DLog` instead of `NSLog`.
+
+Here is a more complete boilerplate I usually include in my projects:
+
+
+	//*****************************************************************************
+	// Macros
+	//*****************************************************************************
+	#ifdef __clang__
+		#define _CMD NSStringFromSelector(_cmd)
+	#else
+		#define _CMD [NSString stringWithFormat:@"%s",_cmd]
+	#endif
+	
+	#define IS_MAIN_QUEUE (dispatch_get_current_queue()==dispatch_get_main_queue())
+	
+	//*****************************************************************************
+	// Logging
+	//*****************************************************************************
+	#ifdef DEBUG
+		#define	DLog(format,...) NSLog(@"%s:%d: "format,__FILE__,__LINE__,##__VA_ARGS__);
+	#else
+		#define DLog(...)
+	#endif
+	
+	#define	WLog(format,...) NSLog(@"%s:%d: WARNING: "format,__FILE__,__LINE__,##__VA_ARGS__);
+	#define	ERRLog(format,...) NSLog(@"%s:%d: ERROR: "format,__FILE__,__LINE__,##__VA_ARGS__);
+	#define	ASSERTLog(format,...) NSLog(@"%s:%d: ASSERTION: "format,__FILE__,__LINE__,##__VA_ARGS__);
+	
+	//*****************************************************************************
+	// Assertions
+	//*****************************************************************************
+	#define ASSERT(cond,format,...)	if(!(cond)) { ASSERTLog(format,##__VA_ARGS__); NSAssert(NO,@""); }
+	#define SUBCLASS_RESPONSIBILITY ASSERT(NO,@"%@ failed to implement %@!",NSStringFromClass([self class]),_CMD);
+	
+
+So now all `DLog` will be automatically removed in non-debug builds. `WLog` and `ERRLog` output is highlighted. And `ASSERT` replaces the annoying `NSAssert1()`, `NSAssert2()` etc calls.
+
+
 # Multiple build targets
 
 If your project has multiple build targets, you can use `.tm_project` files in various directories to control which target will be build. Just set the `APLO_WINDOW_NAME` variable to the name of the desired target.
