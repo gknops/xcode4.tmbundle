@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>beforeRunningCommand</key>
+	<string>nop</string>
+	<key>command</key>
+	<string>#!/usr/bin/env perl -w
+
+open(OUT,"|Markdown.pl |SmartyPants.pl") or die("Can't open '|Markdown.pl |SmartyPants.pl' for write: $!\n");
+
+print OUT &lt;&lt;"MARKDOWN";
+# ios-sim
+
+This bundle includes ios-sim [as found at https://github.com/Fingertips/ios-sim](https://github.com/Fingertips/ios-sim).
+
+## ios-sim --help
+
+MARKDOWN
+
+runAndAddIndent("'$ENV{TM_BUNDLE_SUPPORT}/bin/ios-sim' --help");
+
+print OUT qq{\n## ios-sim --version\n\n};
+
+runAndAddIndent("'$ENV{TM_BUNDLE_SUPPORT}/bin/ios-sim' --version");
+
+print OUT qq{\n## ios-sim showsdks\n\n};
+
+runAndAddIndent("'$ENV{TM_BUNDLE_SUPPORT}/bin/ios-sim' showsdks");
+
+close(OUT);
+
+sub runAndAddIndent {
+	
+	my $cmd=shift;
+	
+	open(IN,"$cmd 2&gt;&amp;1 |") or die("Can't open '$cmd 2&gt;&amp;1 |' for read: $!\n");
+	while(&lt;IN&gt;)
+	{
+		print OUT "\t$_";
+	}
+	close(IN);
+}
+</string>
+	<key>input</key>
+	<string>none</string>
+	<key>inputFormat</key>
+	<string>text</string>
+	<key>keyEquivalent</key>
+	<string>@X</string>
+	<key>name</key>
+	<string>ios-sim help</string>
+	<key>outputCaret</key>
+	<string>afterOutput</string>
+	<key>outputFormat</key>
+	<string>html</string>
+	<key>outputLocation</key>
+	<string>newWindow</string>
+	<key>scope</key>
+	<string>source.objc</string>
+	<key>uuid</key>
+	<string>680E5C0A-A88F-47EF-904C-5412BE632ADC</string>
+	<key>version</key>
+	<integer>2</integer>
+</dict>
+</plist>

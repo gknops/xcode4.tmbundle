@@ -25,8 +25,8 @@ if [ "X$APLO_DEFAULT_TO_LAST" != 'X' ]; then
 fi
 
 APLO_CWD=${APLO_CWD:-"$TM_PROJECT_DIRECTORY"}
-APLO_XCODE_ARGS=${APLO_XCODE_ARGS:-"-scheme '$scheme' '$buildAction'"}
-APLO_PARSER_PATH=${APLO_PARSER_PATH:-"$TM_BUNDLE_SUPPORT/xcodebuildParser"}
+APLO_XCODE_ARGS=${APLO_XCODE_ARGS:-"-scheme '$scheme' $APLO_EXTRA_XCODE_ARGS '$buildAction'"}
+APLO_PARSER_PATH=${APLO_PARSER_PATH:-"$TM_BUNDLE_SUPPORT/bin/xcodebuildParser"}
 APLO_DELETE_FILE=1
 
 export APLO_BUILD APLO_RUN APLO_WINDOW_NAME APLO_CWD APLO_XCODE_ARGS APLO_PARSER_PATH APLO_DELETE_FILE
@@ -56,6 +56,6 @@ open $aploPath
 	<key>uuid</key>
 	<string>663B698A-AD1F-463C-933E-C5CA14802AE1</string>
 	<key>version</key>
-	<string>2</string>
+	<integer>2</integer>
 </dict>
 </plist>

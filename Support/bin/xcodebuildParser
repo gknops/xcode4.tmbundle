@@ -96,6 +96,8 @@
 		
 		open(IN,"xcodebuild $ENV{APLO_XCODE_ARGS} 2>&1 |")
 			or die("Can't open 'xcodebuild $ENV{APLO_XCODE_ARGS}' for read: $!\n");
+		print BUILDLOG "xcodebuild $ENV{APLO_XCODE_ARGS} 2>&1\n" if($WriteBuildLog);
+		$level->emitLine("xcodebuild $ENV{APLO_XCODE_ARGS} 2>&1")  if(exists($ENV{XCBP_DEBUG}));
 		while(<IN>)
 		{
 			print BUILDLOG $_ if($WriteBuildLog);
@@ -186,12 +188,22 @@
 	
 	$level=$level->newChild(0,'',"Running $ExecutablePath");
 	
-	open(IN,"'$ExecutablePath' 2>&1 |") or die("Can't open '$ExecutablePath |' for read: $!\n");
+	my $cmd="'$ExecutablePath'";
+	
+	if(exists($ENV{APLO_IOSSIM_ARGS}))
+	{
+		$ExecutablePath=~s/\.app.*$/.app/;
+		$cmd="'$ENV{TM_BUNDLE_SUPPORT}/bin/ios-sim' launch '$ExecutablePath' $ENV{APLO_IOSSIM_ARGS} ";
+	}
+	
+	$level->emitLine("$cmd 2>&1") if(exists($ENV{XCBP_DEBUG}));
+	open(IN,"$cmd 2>&1 |") or die("Can't open '$cmd 2>&1 |' for read: $!\n");
 	while(<IN>)
 	{
 		# 2012-01-09 17:21:31.987 ApLo[47360:707] /Users/gerti/BITart/OSX/ApLo/ApLo/ApLoAppDelegate.m:19: init ()
+		# 2012-01-27 12:53:06.653 iFilia[87116:f803] didFinishLaunchingWithOptions
 		# remove NSLog prefix stuff
-		s/^\d+\-\d+\-\d+\s+\d+:\d+:\d+\.\d+\s+\S+\s+//;
+		s/^(\[DEBUG\]\s+)?\d+\-\d+\-\d+\s+\d+:\d+:\d+\.\d+\s+\S+\s+//;
 		
 		s/\&/&amp;/g;
 		s/\</&lt;/g;
