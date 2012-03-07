@@ -52,7 +52,7 @@ open $aploPath
 	<key>outputLocation</key>
 	<string>toolTip</string>
 	<key>scope</key>
-	<string>source.objc</string>
+	<string>source.objc, source.strings</string>
 	<key>uuid</key>
 	<string>757C6045-135E-4766-B455-59E7C8626E4F</string>
 	<key>version</key>

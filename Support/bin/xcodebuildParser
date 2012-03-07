@@ -60,6 +60,7 @@
 		Touch						=> 'Touching',
 		ExternalBuildToolExecution	=> 'Running external tool',
 		PhaseScriptExecution		=> 'Running build phase script',
+		CreateUniversalBinary		=> 'X1|Creating universal binary',
 	);
 	
 	our $ExecutablePath='';
