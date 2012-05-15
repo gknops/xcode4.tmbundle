@@ -9,10 +9,17 @@
 
 open(OUT,"|Markdown.pl |SmartyPants.pl") or die("Can't open '|Markdown.pl |SmartyPants.pl' for write: $!\n");
 
+my $iosSimPath="$ENV{TM_BUNDLE_SUPPORT}/bin/ios-sim";
+
 print OUT &lt;&lt;"MARKDOWN";
 # ios-sim
 
 This bundle includes ios-sim [as found at https://github.com/gknops/ios-sim](https://github.com/gknops/ios-sim).
+
+On this system the binary is located at
+
+	'$iosSimPath'
+	
 
 ## ios-sim --help
 
