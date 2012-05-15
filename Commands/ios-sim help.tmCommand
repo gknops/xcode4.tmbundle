@@ -12,7 +12,7 @@ open(OUT,"|Markdown.pl |SmartyPants.pl") or die("Can't open '|Markdown.pl |Smart
 print OUT &lt;&lt;"MARKDOWN";
 # ios-sim
 
-This bundle includes ios-sim [as found at https://github.com/Fingertips/ios-sim](https://github.com/Fingertips/ios-sim).
+This bundle includes ios-sim [as found at https://github.com/gknops/ios-sim](https://github.com/gknops/ios-sim).
 
 ## ios-sim --help
 
@@ -61,6 +61,6 @@ sub runAndAddIndent {
 	<key>uuid</key>
 	<string>680E5C0A-A88F-47EF-904C-5412BE632ADC</string>
 	<key>version</key>
-	<integer>2</integer>
+	<string>2</string>
 </dict>
 </plist>
