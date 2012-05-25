@@ -10,7 +10,7 @@
 
 . "$TM_SUPPORT_PATH/lib/webpreview.sh"
 html_header "Xcode4 Bundle Help" "Xcode4"
-cat "${TM_BUNDLE_SUPPORT}/../README.mdown" |Markdown.pl |SmartyPants.pl
+cat "${TM_BUNDLE_SUPPORT}/../README.md" |Markdown.pl |SmartyPants.pl
 </string>
 	<key>input</key>
 	<string>none</string>

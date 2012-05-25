@@ -6,6 +6,8 @@ This bundle can also run iOS projects in the simulator.
 
 Note that you still need to use Xcode to add and remove files to/from the project itself, edit `.xib` files, for debugging, unit testing etc. But this bundle will allow you to use TextMate for editing, compilation and application execution. 
 
+![BuldAndRun](https://github.com/gknops/Xcode4.tmbundle/raw/master/BuldAndRun.png)
+
 
 # Use
 

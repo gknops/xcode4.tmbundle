@@ -34,7 +34,6 @@ export APLO_BUILD APLO_RUN APLO_WINDOW_NAME APLO_CWD APLO_XCODE_ARGS APLO_PARSER
 aploPath=/tmp/aplo$$.aplo
 
 env&gt;$aploPath
-echo $aploPath
 open $aploPath
 </string>
 	<key>input</key>
