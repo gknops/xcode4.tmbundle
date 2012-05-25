@@ -9,6 +9,14 @@ Note that you still need to use Xcode to add and remove files to/from the projec
 ![BuldAndRun](https://github.com/gknops/Xcode4.tmbundle/raw/master/BuldAndRun.png)
 
 
+# Installation
+
+Open a terminal window and enter these commands:
+
+	cd ~/Library/Application\ Support/Avian/Bundles
+	git clone --recursive git://github.com/gknops/xcode4.tmbundle.git
+
+
 # Use
 
 While in an Objective-C source, use `⌘r` to build and run the current project, or `⇧⌘X` to access other commands (`Build`, `Run`, `Help`).
