@@ -133,7 +133,7 @@
 					$level->emitLine($extraText,'errorLevel');
 				}
 			}
-			elsif(/^\S+:\s*(warning|error):/)
+			elsif(/^.+:\s*(warning|error):/)
 			{
 				$level=$level->popTo(1);
 				$level=$level->addWarningOrErrorLevel(lc($1),$_);
