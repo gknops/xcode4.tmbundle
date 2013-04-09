@@ -75,6 +75,8 @@
 	our $ProjectRoot=$ENV{TM_PROJECT_DIRECTORY};
 	our %PathLookup;
 	
+	our %CustomHighlightNames=();
+	
 ###############################################################################
 # Main
 ###############################################################################
@@ -193,16 +195,26 @@
 	
 	my $cmd="'$ExecutablePath'";
 	
+	my $appName=$ExecutablePath;
+	$appName=~s/.*\///;
+	
 	if(exists($ENV{APLO_IOSSIM_ARGS}))
 	{
 		$ExecutablePath=~s/\.app.*$/.app/;
 		$cmd="'$ENV{TM_BUNDLE_SUPPORT}/bin/ios-sim' launch '$ExecutablePath' $ENV{APLO_IOSSIM_ARGS} ";
+		$appName=undef;
 	}
 	
 	my $startTime=gettimeofday;
 	
 	$level->emitLine("$cmd 2>&1") if(exists($ENV{XCBP_DEBUG}));
 	open(IN,"$cmd 2>&1 |") or die("Can't open '$cmd 2>&1 |' for read: $!\n");
+	if(defined($appName) && !exists($ENV{XCODE4_NO_ACTIVATE_LAUNCHED_APP}))
+	{
+		# Order front
+		select(undef,undef,undef,.2);
+		system("open -a '$cmd'");
+	}
 	while(<IN>)
 	{
 		# 2012-01-09 17:21:31.987 ApLo[47360:707] /Users/gerti/BITart/OSX/ApLo/ApLo/ApLoAppDelegate.m:19: init ()
@@ -236,6 +248,8 @@
 ###############################################################################
 sub storeExecutablePath {
 	
+	return if(exists($ENV{APLO_EXECUTABLE_PATH}));
+	
 	return unless($ExecutablePath);
 	
 	open(OUT,">.aploExecutablePathFor$ENV{APLO_WINDOW_NAME}") or die("Can't open '.aploExecutablePathFor$ENV{APLO_WINDOW_NAME}' for write: $!\n");
@@ -243,6 +257,13 @@ sub storeExecutablePath {
 	close(OUT);
 }
 sub findExecutablePath {
+	
+	if(exists($ENV{APLO_EXECUTABLE_PATH}))
+	{
+		$ExecutablePath=$ENV{APLO_EXECUTABLE_PATH};
+		
+		return 1;
+	}
 	
 	return 1 if($ExecutablePath);
 	
@@ -323,7 +344,7 @@ sub printJavascript {
 	
 	print <<'JAVASCRIPT';
 	function toggleLevel(id) {
-	
+		
 		var button=document.getElementById(id);
 		var html=toggleVisibilityOfElementsNamed(id);
 	
@@ -487,6 +508,14 @@ sub printCSS {
 		font: 12px "Monaco", "Courier New", monospace;
 		white-space: pre-wrap;
 	}
+	.appOutputSEPARATOR {
+		background: gray;
+		color: white;
+		width: 99%;
+	}
+	.appOutputINFO {
+		color: green;
+	}
 	.appOutputWARNING {
 		color: GoldenRod;
 	}
@@ -497,7 +526,7 @@ sub printCSS {
 		color: white;
 		font-weight: bold;
 		background: FireBrick ;
-	}	
+	}
 CSS
 };
 
@@ -675,7 +704,11 @@ sub appendLineWithLink {
 	
 	my $html=$line;
 	
-	if($line=~s/^([^:]+):(\d+):((\d+)\:)?\s*//)
+	if($line=~/ApLoColorDefine\s+(\S+)\s+(\S+)/)
+	{
+		$CustomHighlightNames{$1}=$2;
+	}
+	elsif($line=~s/^([^:]+):(\d+):((\d+)\:)?\s*//)
 	{
 		my $path=$1;
 		my $lineNo=$2;
@@ -705,7 +738,14 @@ sub appendLineWithLink {
 				$file.=":$column";
 			}
 			
-			push(@extraClasses,"appOutput$1") if($line=~/^(WARNING|ERROR|ASSERTION)/);
+			push(@extraClasses,"appOutput$1") if($line=~/^(SEPARATOR|INFO|WARNING|ERROR|ASSERTION)/);
+			
+			if($line=~/^(\S+):/ && exists($CustomHighlightNames{$1}))
+			{
+				my $l=$line;
+				
+				$line=qq[<span style="color:$CustomHighlightNames{$1}">$line</style>];
+			}
 			
 			my $alt='';
 			if(defined($timeStamp))
@@ -716,6 +756,8 @@ sub appendLineWithLink {
 			{
 				$alt=qq{title="a title 2!"};
 			}
+			
+			$line=~s/^SEPARATOR: //;
 			
 			$html=qq{<a href="txmt://open/?url=file://$path&line=$lineNo$col"$alt>$file</a>: $line};
 		}

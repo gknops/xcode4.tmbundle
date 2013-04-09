@@ -69,6 +69,23 @@ Here is a more complete boilerplate I usually include in my projects:
 
 So now all `DLog` will be automatically removed in non-debug builds. `WLog` and `ERRLog` output is highlighted. And `ASSERT` replaces the annoying `NSAssert1()`, `NSAssert2()` etc calls.
 
+The ApLo output will key off prefixes like `WARNING:` and `ERROR:` as seen above and color the output. These prefixes and colors are supported:
+
+INFO
+:	green
+WARNING
+:	GoldenRod
+ERROR
+:	FireBrick
+ASSERTION
+:	white on FireBrick background
+
+You can also define custom colors, using a line like:
+
+	NSLog(@"ApLoColorDefine A_PREFIX HTML_COLOR");
+
+where `A_PREFIX` is the prefix you will be using, and `HTML_COLOR` is any valid HTML color designation (name, hex color etc) that can be used in a style.
+
 
 # Multiple build targets
 
