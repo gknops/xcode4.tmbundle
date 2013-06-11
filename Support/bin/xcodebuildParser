@@ -137,7 +137,7 @@
 					$level->emitLine($extraText,'errorLevel');
 				}
 			}
-			elsif(/^.+:\s*(warning|error):/)
+			elsif(/^.+:\s*(warning|error|fatal\s+error):/)
 			{
 				$level=$level->popTo(1);
 				$level=$level->addWarningOrErrorLevel(lc($1),$_);
@@ -825,7 +825,9 @@ sub getPathFromArgs {
 	
 	return '' if($num<1);
 	
-	my @a=split(/\s/,$s);
+	my @a=split(/(?<!\\)\s/,$s);
+	
+	# print STDERR "\$a[1]: $a[1]\n";
 	
 	my $idx=0;
 	my @b=();
