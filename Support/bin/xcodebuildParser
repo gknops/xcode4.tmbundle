@@ -42,6 +42,7 @@
 	our $WriteBuildLog=0;
 	
 	$|=1;
+	my $oldfh=select(STDERR);$|=1;select($oldfh);
 	
 	#
 	# Note: optionally keyword values are preceded by one or more option flags,
@@ -107,6 +108,8 @@
 		{
 			print BUILDLOG $_ if($WriteBuildLog);
 			chomp();
+			
+			next if(/^\s*setenv\s+/);
 			
 			s/\&/&amp;/g;
 			s/\</&lt;/g;
@@ -207,8 +210,10 @@
 	
 	my $startTime=gettimeofday;
 	
-	$level->emitLine("$cmd 2>&1") if(exists($ENV{XCBP_DEBUG}));
-	open(IN,"$cmd 2>&1 |") or die("Can't open '$cmd 2>&1 |' for read: $!\n");
+	my $envArgs=$ENV{APLO_CMD_ARGS} // '';
+	
+	$level->emitLine("$cmd $envArgs 2>&1") if(exists($ENV{XCBP_DEBUG}));
+	open(IN,"$cmd $envArgs 2>&1 |") or die("Can't open '$cmd $envArgs 2>&1 |' for read: $!\n");
 	if(defined($appName) && !exists($ENV{XCODE4_NO_ACTIVATE_LAUNCHED_APP}))
 	{
 		# Order front
