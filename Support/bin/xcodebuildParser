@@ -109,6 +109,7 @@
 			print BUILDLOG $_ if($WriteBuildLog);
 			chomp();
 			
+			next if(/^\s*export\s+/);
 			next if(/^\s*setenv\s+/);
 			
 			s/\&/&amp;/g;
@@ -712,6 +713,8 @@ sub appendLineWithLink {
 	if($line=~/ApLoColorDefine\s+(\S+)\s+(\S+)/)
 	{
 		$CustomHighlightNames{$1}=$2;
+		# $html=qq[$1=><span style="color:$2">$2</style>];
+		$html=qq[<span style="color:$2">$line</style>];
 	}
 	elsif($line=~s/^([^:]+):(\d+):((\d+)\:)?\s*//)
 	{
