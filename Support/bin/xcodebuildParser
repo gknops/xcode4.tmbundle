@@ -213,8 +213,20 @@
 	
 	my $envArgs=$ENV{APLO_CMD_ARGS} // '';
 	
+	my $customEnv='';
+	
+	foreach my $key (keys %ENV)
+	{
+		if(index($key,'APLO_ENV_RUN_')==0)
+		{
+			my $k=substr($key,13);
+			
+			$customEnv.="$k='$ENV{$key}' ";
+		}
+	}
+	
 	$level->emitLine("$cmd $envArgs 2>&1") if(exists($ENV{XCBP_DEBUG}));
-	open(IN,"$cmd $envArgs 2>&1 |") or die("Can't open '$cmd $envArgs 2>&1 |' for read: $!\n");
+	open(IN,"$customEnv $cmd $envArgs 2>&1 |") or die("Can't open '$cmd $envArgs 2>&1 |' for read: $!\n");
 	if(defined($appName) && !exists($ENV{XCODE4_NO_ACTIVATE_LAUNCHED_APP}))
 	{
 		# Order front
